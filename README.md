@@ -1,81 +1,137 @@
-# Go语言代码提取工具
+# Go语言AST代码提取工具
 
-这是一个Python脚本，用于从GitHub仓库中提取Go语言函数代码。
+这是一个基于Go AST (Abstract Syntax Tree)的代码提取工具，能够从GitHub仓库中精确提取Go语言函数代码及其完整上下文。
+
+## 🚀 新版本特性
+
+### 基于AST的精确解析
+- 使用Go官方AST包进行语法分析，100%准确解析
+- 支持所有Go语法特性（泛型、方法接收器、多返回值等）
+- 自动处理嵌套函数和复杂类型定义
+
+### 完整类型上下文
+- **类型定义提取**：自动提取接收器、参数、返回值的完整类型定义
+- **成员函数识别**：显示类型的所有成员函数列表
+- **智能上下文关联**：提供前后5个相关函数的完整实现
+
+### 自动编译机制
+- 运行时自动编译Go解析器，支持跨平台
+- 智能编译缓存，提高执行效率
 
 ## 功能特点
 
-1. **GitHub仓库下载**：支持输入GitHub链接，自动下载并解压仓库
-2. **智能文件过滤**：自动排除包含"test"的文件名
-3. **函数提取**：使用正则表达式提取Go函数定义
-4. **批量输出**：每个函数保存为单独的txt文件
+1. **GitHub仓库下载**：自动下载和解压GitHub仓库
+2. **AST精确解析**：使用Go官方语法分析器，确保100%准确性
+3. **完整类型信息**：提取类型定义和成员函数信息
+4. **上下文提取**：提供前后5个相关函数的完整实现
+5. **智能过滤**：自动排除测试文件和测试函数
+6. **批量输出**：每个函数保存为结构化的txt文件
 
 ## 使用方法
 
-1. 确保安装Python 3.6+ 和 requests 库：
+### 环境要求
+1. **Python 3.6+** 和必要的Python库：
    ```bash
    pip install requests
    ```
 
-2. 创建一个文本文件(如repos.txt)，列出要提取的GitHub仓库，格式为`owner/repository`：
+2. **Go 1.18+** 用于编译AST解析器（会自动检测和编译）
+
+### 快速开始
+
+1. **准备仓库列表文件** (`repos.txt`)：
    ```text
-   # 示例文件内容
+   # 支持多个GitHub仓库
    gin-gonic/gin
-   golang/example
+   kubernetes/kubernetes
+   # 添加更多仓库...
    ```
 
-3. 运行脚本：
+2. **运行提取工具**：
    ```bash
    python main.py
    ```
 
-4. 按照提示输入：
-   - 包含GitHub仓库列表的文件路径(如repos.txt)
-   - 输出目录（可选，默认为"extracted_functions"）
+3. **查看结果**：提取的函数将保存在 `extracted_functions_ast/` 目录中
 
-## 示例
-
-```bash
-python main.py
-Enter GitHub repository URL: https://github.com/golang/example
-Enter output directory (default: extracted_functions): my_functions
+### 输出目录结构
+```
+extracted_functions_ast/
+└── 仓库名_仓库名/
+    ├── 文件名_func_1.txt
+    ├── 文件名_func_2.txt
+    └── ...
 ```
 
-## 输出格式
+## 输出格式说明
 
-提取的函数将保存在指定目录中，文件名格式为：
-`{源文件名}_func_{序号}.txt`
+每个函数文件包含完整的结构化信息：
 
-每个函数文件包含以下字段：
-1. `PackagePath`: 函数所在的包路径
-2. `CodeRep`: 代码仓库路径
-3. `ImportPackage`: 导入的包
-4. `RecData`: 接收者类型定义（如果有）
-5. `ParData`: 参数类型定义
-6. `ResData`: 返回值类型定义
-7. `BefCode`: 前5个相关函数代码
-8. `AftCode`: 后5个相关函数代码  
-9. `Prompt`: 函数签名（左大括号所在行）
-10. `Output`: 函数体内容（大括号之间的代码）
-
-示例：
 ```text
-# PackagePath: github.com/gin-gonic/gin/auth.go
-# CodeRep: github.com/gin-gonic/gin/
-# ImportPackage: import (...)
-# RecData: type authPairs []authPair
-# ParData: type Accounts map[string]string
-# ResData: not exist
-# BefCode: func (a authPairs) searchCredential(...) {...}
-# AftCode: func BasicAuth(...) {...}
-# Prompt: func BasicAuthForRealm(accounts Accounts, realm string) HandlerFunc {
-# Output: if realm == "" {
-    realm = "Authorization Required"
+# PackagePath: github.com/owner/repo/path/file.go
+# CodeRep: github.com/owner/repo/
+# ImportPackage: "fmt"; "strings"; "time"  # 所有导入包
+# RecData: type Context struct {            # 接收器类型定义
+    Field1 string
+    Field2 int
 }
-...
+// Methods:                                # 接收器的所有成员函数
+- Method1
+- Method2
+- ...
+# ParData: param string                    # 参数定义（包含类型信息）
+# ResData: (int, error)                    # 返回值定义
+# BefCode: func previousFunc() {           # 前5个相关函数
+    // 完整函数实现
+}
+# AftCode: func nextFunc() {               # 后5个相关函数  
+    // 完整函数实现
+}
+# Prompt: func MyFunction(param string) (int, error)
+# Output: {                                # 当前函数的完整实现
+    // 函数体代码
+}
+```
+
+## 🎯 核心优势
+
+### 相比正则表达式版本的改进：
+1. **100%准确性**：基于AST语法分析，不会遗漏或误解析
+2. **完整类型信息**：自动关联类型定义和成员函数
+3. **更好的上下文**：前后函数提供完整的实现代码
+4. **自动依赖管理**：运行时自动编译，无需手动配置
+
+### 示例输出
+```text
+# RecData: type Context struct {
+    writermem responseWriter
+    Request   *http.Request
+    Writer    ResponseWriter
+    // ... 完整结构体定义
+}
+// Methods:
+- reset
+- Copy  
+- HandlerName
+- HandlerNames
+- // ... 150+ 成员函数
 ```
 
 ## 注意事项
 
-- 脚本会自动排除测试文件（文件名包含"test"）
-- 支持处理大型仓库，使用临时文件夹避免磁盘占用
-- 网络连接需要稳定，以便下载GitHub仓库
+- 需要网络连接下载GitHub仓库
+- 首次运行会自动编译Go解析器（需要Go环境）
+- 支持处理大型代码库，自动使用临时文件
+- 输出目录会自动清空，避免重复文件
+
+## 技术架构
+
+```mermaid
+graph TD
+    A[Python主程序] --> B[下载GitHub仓库]
+    B --> C[编译Go AST解析器]
+    C --> D[解析Go文件]
+    D --> E[提取类型和函数信息]
+    E --> F[生成结构化输出]
+    F --> G[保存结果文件]
+```
