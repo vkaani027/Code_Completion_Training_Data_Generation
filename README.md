@@ -25,7 +25,7 @@
 3. **完整类型信息**：提取类型定义和成员函数信息
 4. **上下文提取**：提供前后5个相关函数的完整实现
 5. **智能过滤**：自动排除测试文件和测试函数
-6. **批量输出**：每个函数保存为结构化的txt文件
+6. **批量输出**：每个函数保存为结构化的json文件
 
 ## 使用方法
 
@@ -58,38 +58,32 @@
 ```
 extracted_functions_ast/
 └── 仓库名_仓库名/
-    ├── 文件名_func_1.txt
-    ├── 文件名_func_2.txt
+    ├── 文件名_func_1.json
+    ├── 文件名_func_2.json
     └── ...
 ```
 
 ## 输出格式说明
 
-每个函数文件包含完整的结构化信息：
+每个函数文件包含完整的结构化信息，使用JSON格式：
 
-```text
-# PackagePath: github.com/owner/repo/path/file.go
-# CodeRep: github.com/owner/repo/
-# ImportPackage: "fmt"; "strings"; "time"  # 所有导入包
-# RecData: type Context struct {            # 接收器类型定义
-    Field1 string
-    Field2 int
-}
-// Methods:                                # 接收器的所有成员函数
-- Method1
-- Method2
-- ...
-# ParData: param string                    # 参数定义（包含类型信息）
-# ResData: (int, error)                    # 返回值定义
-# BefCode: func previousFunc() {           # 前5个相关函数
-    // 完整函数实现
-}
-# AftCode: func nextFunc() {               # 后5个相关函数  
-    // 完整函数实现
-}
-# Prompt: func MyFunction(param string) (int, error)
-# Output: {                                # 当前函数的完整实现
-    // 函数体代码
+```json
+{
+    "package_path": "github.com/owner/repo/path/file.go",
+    "code_rep": "github.com/owner/repo/",
+    "import_package": ["fmt", "strings", "time"],
+    "receiver": "type Context struct {\n    Field1 string\n    Field2 int\n}",
+    "methods": ["Method1", "Method2"],
+    "params": "param string",
+    "returns": "(int, error)",
+    "before_funcs": [
+        "func previousFunc() {\n    // 完整函数实现\n}"
+    ],
+    "after_funcs": [
+        "func nextFunc() {\n    // 完整函数实现\n}"
+    ],
+    "prompt": "func MyFunction(param string) (int, error)",
+    "output": "// 当前函数的完整实现\nfunc MyFunction(param string) (int, error) {\n    // 函数体代码\n}"
 }
 ```
 
@@ -102,19 +96,24 @@ extracted_functions_ast/
 4. **自动依赖管理**：运行时自动编译，无需手动配置
 
 ### 示例输出
-```text
-# RecData: type Context struct {
-    writermem responseWriter
-    Request   *http.Request
-    Writer    ResponseWriter
-    // ... 完整结构体定义
+```json
+{
+    "package_path": "github.com/gin-gonic/gin/context.go",
+    "code_rep": "github.com/gin-gonic/gin/",
+    "import_package": ["errors", "fmt", "net/http"],
+    "receiver": "type Context struct {\n    writermem responseWriter\n    Request   *http.Request\n    Writer    ResponseWriter\n}",
+    "methods": ["reset", "Copy", "HandlerName", "HandlerNames"],
+    "params": "param string",
+    "returns": "(int, error)",
+    "before_funcs": [
+        "func previousFunc() {\n    // 完整函数实现\n}"
+    ],
+    "after_funcs": [
+        "func nextFunc() {\n    // 完整函数实现\n}"
+    ],
+    "prompt": "func Next() (*http.Request, ResponseWriter)",
+    "output": "func (c *Context) Next() {\n    c.index++\n    for c.index < len(c.handlers) {\n        c.handlers[c.index](c)\n        c.index++\n    }\n}"
 }
-// Methods:
-- reset
-- Copy  
-- HandlerName
-- HandlerNames
-- // ... 150+ 成员函数
 ```
 
 ## 注意事项
